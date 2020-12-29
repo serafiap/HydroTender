@@ -50,7 +50,10 @@ class SerialArduino:
         while True:
             data = self.connection.readline()[:-2]
             if data:
-                return (data.decode("utf-8"))
+                if data.decode("utf-8").split(";")[0] == "0":
+                    start = datetime.datetime.now()
+                else:
+                    return (data.decode("utf-8"))
             if (datetime.datetime.now() - start).total_seconds() >= timeout:
                 return -100
 
@@ -63,6 +66,11 @@ class SerialArduino:
 
     def __analogWrite(self, pin: int, val: int, seconds: int = -1):
         return str.encode("analogWrite;{};{};{}*".format(pin,val, seconds))
+
+
+
+
+
 
 
     
