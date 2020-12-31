@@ -10,7 +10,7 @@ from tkinter import ttk
 from tkinter import messagebox
 import arduino_strings as a_s
 import ui_logic as uil
-from Serial_Arduino import SerialArduino
+from Serial_Arduino import DigitalValue, SerialArduino
 from Serial_Arduino import PinMode
 import worker
 import shared_resources as sr
@@ -27,17 +27,22 @@ def update(*args):
     newVal.set("")
 
 def button1(*args):
-    w.program = worker.Program.PULSE
+    lightOn = worker.work_request(worker.JobType.DIGITAL_WRITE)
+    lightOn.Pin = 11
+    lightOn.DValue = DigitalValue.HIGH
+    w.add_job(lightOn)
 
 def button2(*args):
-    w.program = worker.Program.BLINK
+    lightOff = worker.work_request(worker.JobType.DIGITAL_WRITE)
+    lightOff.Pin = 11
+    lightOff.DValue = DigitalValue.LOW
+    w.add_job(lightOff)
 
 def handle_exit(*args):
     if messagebox.askokcancel("Quit", "Quit?"):
         sr.workerKilled = True
-        while(sr.workerRunning):
-            time.sleep(0)
-        sys.exit()
+        w.end()
+        quit()
 
 
 arduino = SerialArduino("COM4", 115200)
@@ -45,7 +50,12 @@ arduino.Start(2)
 print(arduino.pinMode(11, PinMode.OUTPUT))
 root = Tk()
 w = worker.workerThread(1, "thred", arduino)
-w.program = worker.Program.PULSE
+w.setDaemon(True)
+w.program = worker.Program.NONE
+lightPin = worker.work_request(worker.JobType.SET_PINMODE)
+lightPin.Pin = 11
+lightPin.Mode = PinMode.OUTPUT
+w.add_job(lightPin)
 
 ############################################################
 # Geometry
@@ -75,7 +85,8 @@ val_entry.grid(column=2, row=1,sticky=(W,E))
 val_entry.focus()
 
 currentVal= StringVar()
-ttk.Label(mainframe, textvariable=w.volume, text = "0").grid(column=2, row=2, sticky=(W,E))
+valueLabel = ttk.Label(mainframe, textvariable=w.volume, text = "0")
+valueLabel.grid(column=2, row=2, sticky=(W,E))
 
 ttk.Button(mainframe, text="1", command=button1).grid(column=1, row=3, sticky=(N, W, E, S))
 ttk.Button(mainframe, text="2", command=button2).grid(column=2, row=3, sticky=(N, W, E, S))
@@ -95,11 +106,13 @@ for child in mainframe.winfo_children():
 root.protocol('WM_DELETE_WINDOW', handle_exit)
 root.bind("<Return>", update)
 root.bind("<Escape>", handle_exit)
+root.bind("1", button1)
+root.bind("2", button2)
 
 
 
-#window.attributes('-fullscreen', True)
-# window.state('zoomed')
+#root.attributes('-fullscreen', True)
+#root.state('zoomed')
 w.start()
 
 root.mainloop()

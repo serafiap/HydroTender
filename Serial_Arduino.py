@@ -1,3 +1,4 @@
+import enum
 import serial, time, datetime
 import arduino_strings as a_s
 from enum import Enum
@@ -9,6 +10,10 @@ class PinMode(Enum):
 class DigitalValue(Enum):
     HIGH = "HIGH"
     LOW = "LOW"
+
+class DHT(Enum):
+    DHT11 = "DHT11"
+    DHT22 = "DHT22"
 
 class SerialArduino:
     Initialized = False
@@ -43,7 +48,35 @@ class SerialArduino:
         self.connection.write(self.__digitalWrite(pin, val, duration))
         return self.__AwaitResponse()
 
+    def dhtInitialize(self, pin:int, dhtType:DHT):
+        self.Clear
+        self.connection.write(self.__dhtInitialize(pin, dhtType))
+        return self.__AwaitResponse()
 
+    def dhtTemperature(self, index:int):
+        self.Clear
+        self.connection.write(self.__dhtTemperature(index))
+        return self.__AwaitResponse()
+
+    def dhtHumidity(self, index:int):
+        self.Clear()
+        self.connection.write(self.__dhtHumidity(index))
+        return self.__AwaitResponse()
+
+    def dht(self, pin:int, dhtType:DHT):
+        self.Clear()
+        self.connection.write(self.__dht(pin, dhtType))
+        return self.__AwaitResponse()
+
+    def idDS18B20(self, pin:int):
+        self.Clear()
+        self.connection.write(self.__idDS18B20(pin))
+        return self.__AwaitResponse()
+
+    def addressDS18B20(self, pin:int, address):
+        self.Clear()
+        self.connection.write(self.__addressDS18B20(pin, address))
+        return self.__AwaitResponse()
 
     def __AwaitResponse(self, timeout = 10):
         start = datetime.datetime.now()
@@ -67,7 +100,23 @@ class SerialArduino:
     def __analogWrite(self, pin: int, val: int, seconds: int = -1):
         return str.encode("analogWrite;{};{};{}*".format(pin,val, seconds))
 
+    def __dhtInitialize(self, pin: int, dhtType: DHT):
+        return str.encode("startDHT;{};{}*".format(pin, dhtType))
 
+    def __dhtTemperature(self, index:int):
+        return str.encode("readDHTT;{}*".format(index))
+
+    def __dhtHumidity(self, index:int):
+        return str.encode("readDHTH;{}*".format(index))
+
+    def __dht(self, pin:int, dhtType:DHT):
+        return str.encode("readDHT;{};{}*".format(pin, dhtType.value))
+
+    def __idDS18B20(self, pin:int):
+        return str.encode("idDS18B20;{}*".format(pin))
+
+    def __addressDS18B20(self, pin:int, address):
+        return str.encode("addressDS18B20;{};{}*".format(pin, address))
 
 
 
