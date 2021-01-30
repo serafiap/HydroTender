@@ -1,0 +1,17 @@
+def dht_test(self):
+        while self.program == Program.DHT:
+            result = self.arduino.dht(8, DHT.DHT11)
+            temp = result.split(";")[1]
+            humi = result.split(";")[2]
+            print(result)
+            print("Temp: {}, Humidity: {}".format(temp, humi))
+            time.sleep(5)
+
+    def DS18B20_test(self):
+        while self.program == Program.DS18B20:
+            address = self.arduino.idDS18B20(2).split(';')[1]
+            print(address)
+            time.sleep(2)
+            temp = (self.arduino.readByAddressDS18B20(2, address))
+            self.volume.set(temp.split(";")[1])
+            time.sleep(5)

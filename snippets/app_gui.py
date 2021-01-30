@@ -64,8 +64,19 @@ w.add_job(lightPin)
 
 root.title("Adjust LED")
 root.geometry("800x480")
-mainframe = ttk.Frame(root, padding="3 3 12 12")
-mainframe.grid(column=0, row=0, sticky=(N, W, E, S))
+
+nb = ttk.Notebook(root)
+nb.grid(column=0, row=0, sticky=(N, W, E, S))
+
+#mainframe = ttk.Frame(root, padding="3 3 12 12")
+#mainframe.grid(column=0, row=0, sticky=(N, W, E, S))
+mainframe = ttk.Frame(nb)
+controlFrame = ttk.Frame(nb)
+nb.add(mainframe, text="First")
+nb.add(controlFrame, text="Second")
+nb.select(controlFrame)
+nb.enable_traversal()
+
 root.columnconfigure(0, weight=1)
 root.rowconfigure(0, weight=1)
 mainframe.columnconfigure(0, weight=1)

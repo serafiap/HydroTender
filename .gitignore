@@ -1,0 +1,5 @@
+sensors/DHT11.csv
+sensors/WaterConductivity.csv
+sensors/WaterTemperature.csv
+sensors/WaterUltrasonicLevel.csv
+Config/TelegramConfig.json

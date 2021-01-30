@@ -8,7 +8,7 @@
             "name": "Python: App.py File",
             "type": "python",
             "request": "launch",
-            "program": "app.py",
+            "program": "app_terminal.py",
             "console": "integratedTerminal"
         },
         {

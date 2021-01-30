@@ -4,9 +4,10 @@ import datetime
 from Serial_Arduino import *
 from Serial_Arduino import SerialArduino
 from tkinter import *
-import shared_resources as sr
 from enum import Enum
 from typing import List
+import arduino_inputs as a_i
+import sensors
 
 class Program(Enum):
     NONE = 0
@@ -23,6 +24,8 @@ class JobType(Enum):
     DS18B20_IDENTIFY = 6
     DS18B20_READ = 7
 
+
+
 class work_request():
     def __init__(self, jobType:JobType):
         self.JobType:JobType = jobType
@@ -31,45 +34,58 @@ class work_request():
         self.DValue:DigitalValue
         self.Type:DHT
         self.Mode:PinMode
+        
 
 class workerThread (threading.Thread):
-    def __init__(self, threadID, name, arduino: SerialArduino):
+    def __init__(self, threadID, name):
         threading.Thread.__init__(self)
-        self.arduino = arduino
+        self.arduino = SerialArduino()
+        
         self.WorkQueue:List[work_request] = []
-        self.volume = StringVar()
-        self.volume.set(0)
+        self.SensorQueue:List[int] = []
         self.program = Program.NONE
+        self.AirTemp = 0
+        self.Humidity = 0
+        self.ReservoirTemp = 0
+        self.PH = 0
+        self.Concentration = 0
+        self.WaterLevel = 0
+
+        self.active = True
 
     def run(self):
-        sr.workerRunning = True
-        while sr.workerKilled == False:
+        self.arduino.port = self.arduino.findPort()
+        self.arduino.Start()
+        #self.sensors = sensors.Initialize(self.arduino)
+        self.sensors = sensors.ReadList(self.arduino)
+        while True:
+            if self.active == False:
+                continue
             if(len(self.WorkQueue) > 0):
                 self.execute_job(self.WorkQueue.pop(0))
-            self.dht_test()
-            self.DS18B20_test()
-        self.end()
+            if(len(self.SensorQueue) > 0):
+                sensor = self.sensors[self.SensorQueue.pop(0)]
+                self.readAndProcess(sensor)
+            for sensor in self.sensors:
+                if sensor.ready():
+                    self.readAndProcess(sensor)
+            time.sleep(1)
+    
+    def readAndProcess(self, sensor:a_i.ArduinoReadable):
+        readResult =  sensor.read()
+        if readResult.resultCode == "1":
+            if sensor.sensorType == a_i.SensorTypes.DHT11:
+                self.AirTemp = sensor.value[0]
+                self.Humidity = sensor.value[1]
+            if sensor.sensorType == a_i.SensorTypes.WATER_TEMPERATURE:
+                self.ReservoirTemp = sensor.value
+            if sensor.sensorType == a_i.SensorTypes.WATER_CONDUCTIVITY:
+                self.Concentration = sensor.value
+            if sensor.sensorType == a_i.SensorTypes.WATER_LEVEL:
+                self.WaterLevel = sensor.value
 
     def add_job(self, request:work_request):
         self.WorkQueue.append(request)
-
-    def dht_test(self):
-        while sr.workerKilled == False and self.program == Program.DHT:
-            result = self.arduino.dht(8, DHT.DHT11)
-            temp = result.split(";")[1]
-            humi = result.split(";")[2]
-            print(result)
-            print("Temp: {}, Humidity: {}".format(temp, humi))
-            time.sleep(5)
-
-    def DS18B20_test(self):
-        while sr.workerKilled == False and self.program == Program.DS18B20:
-            address = self.arduino.idDS18B20(2).split(';')[1]
-            print(address)
-            time.sleep(2)
-            temp = (self.arduino.addressDS18B20(2, address))
-            self.volume.set(temp.split(";")[1])
-            time.sleep(5)
 
     def execute_job(self, job:work_request):
         if job.JobType == JobType.SET_PINMODE:
@@ -77,7 +93,6 @@ class workerThread (threading.Thread):
         elif job.JobType == JobType.DIGITAL_WRITE:
             self.arduino.digitalWrite(job.Pin, job.DValue)
 
-    def end(self):
-        sr.workerRunning = False
+
 
 
