@@ -67,7 +67,7 @@ def waterLevel(update:Update, context:CallbackContext):
 
 def status(update:Update, context:CallbackContext):
     s = "System Status:\n"
-    s += "Air Temperature: {}C\n".format(workerT.AirTemp)
+    s += "Air Temperature: {}C ({:.2f}F)\n".format(workerT.AirTemp, ((float(workerT.AirTemp)*9/5)+ 32))
     s += "Humidity: {}%\n".format(workerT.Humidity)
     s += "Reservoir Temperature: {}\n".format(workerT.ReservoirTemp)
     s += "Concentration: {}\n".format(round(workerT.Concentration,2))
